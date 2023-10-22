@@ -1,4 +1,5 @@
-# 💤 LazyVim
+## LavaC's personal NeoVim con
 
-A starter template for [LazyVim](https://github.com/LazyVim/LazyVim).
-Refer to the [documentation](https://lazyvim.github.io/installation) to get started.
+based on LazyVim.
+
+the [ASCII Generator](http://patorjk.com/software/taag/) I have used.
