@@ -61,6 +61,7 @@ return {
             },
           },
         },
+        eslint = {},
       },
       -- you can do any additional lsp server setup here
       -- return true if you don't want this server to be setup with lspconfig
@@ -72,7 +73,39 @@ return {
         --   return true
         -- end,
         -- Specify * to use this function as a fallback for any server
-        -- ["*"] = function(server, opts) end,
+        eslint = function()
+          local function get_client(buf)
+            return require("lazyvim.util").lsp.get_clients({ name = "eslint", bufnr = buf })[1]
+          end
+
+          local formatter = require("lazyvim.util").lsp.formatter({
+            name = "eslint: lsp",
+            primary = false,
+            priority = 200,
+            filter = "eslint",
+          })
+
+          -- Use EslintFixAll on Neovim < 0.10.0
+          if not pcall(require, "vim.lsp._dynamic") then
+            formatter.name = "eslint: EslintFixAll"
+            formatter.sources = function(buf)
+              local client = get_client(buf)
+              return client and { "eslint" } or {}
+            end
+            formatter.format = function(buf)
+              local client = get_client(buf)
+              if client then
+                local diag = vim.diagnostic.get(buf, { namespace = vim.lsp.diagnostic.get_namespace(client.id) })
+                if #diag > 0 then
+                  vim.cmd("EslintFixAll")
+                end
+              end
+            end
+          end
+
+          -- register the formatter with LazyVim
+          require("lazyvim.util").format.register(formatter)
+        end, -- ["*"] = function(server, opts) end,
       },
     },
     ---@param opts PluginLspOpts
@@ -81,23 +114,23 @@ return {
         local plugin = require("lazy.core.config").spec.plugins["neoconf.nvim"]
         require("neoconf").setup(require("lazy.core.plugin").values(plugin, "opts", false))
       end
-  
+
       -- setup autoformat
       Util.format.register(Util.lsp.formatter())
-  
+
       -- deprectaed options
       if opts.autoformat ~= nil then
         vim.g.autoformat = opts.autoformat
         Util.deprecate("nvim-lspconfig.opts.autoformat", "vim.g.autoformat")
       end
-  
+
       -- setup keymaps
       Util.lsp.on_attach(function(client, buffer)
         require("lazyvim.plugins.lsp.keymaps").on_attach(client, buffer)
       end)
-  
+
       local register_capability = vim.lsp.handlers["client/registerCapability"]
-  
+
       vim.lsp.handlers["client/registerCapability"] = function(err, res, ctx)
         local ret = register_capability(err, res, ctx)
         local client_id = ctx.client_id
@@ -107,15 +140,15 @@ return {
         require("lazyvim.plugins.lsp.keymaps").on_attach(client, buffer)
         return ret
       end
-  
+
       -- diagnostics
       for name, icon in pairs(require("lazyvim.config").icons.diagnostics) do
         name = "DiagnosticSign" .. name
         vim.fn.sign_define(name, { text = icon, texthl = name, numhl = "" })
       end
-  
+
       local inlay_hint = vim.lsp.buf.inlay_hint or vim.lsp.inlay_hint
-  
+
       if opts.inlay_hints.enabled and inlay_hint then
         Util.lsp.on_attach(function(client, buffer)
           if client.supports_method("textDocument/inlayHint") then
@@ -123,7 +156,7 @@ return {
           end
         end)
       end
-  
+
       if type(opts.diagnostics.virtual_text) == "table" and opts.diagnostics.virtual_text.prefix == "icons" then
         opts.diagnostics.virtual_text.prefix = vim.fn.has("nvim-0.10.0") == 0 and "●"
           or function(diagnostic)
@@ -135,9 +168,9 @@ return {
             end
           end
       end
-  
+
       vim.diagnostic.config(vim.deepcopy(opts.diagnostics))
-  
+
       local servers = opts.servers
       local has_cmp, cmp_nvim_lsp = pcall(require, "cmp_nvim_lsp")
       local capabilities = vim.tbl_deep_extend(
@@ -147,12 +180,12 @@ return {
         has_cmp and cmp_nvim_lsp.default_capabilities() or {},
         opts.capabilities or {}
       )
-  
+
       local function setup(server)
         local server_opts = vim.tbl_deep_extend("force", {
           capabilities = vim.deepcopy(capabilities),
         }, servers[server] or {})
-  
+
         if opts.setup[server] then
           if opts.setup[server](server, server_opts) then
             return
@@ -164,14 +197,14 @@ return {
         end
         require("lspconfig")[server].setup(server_opts)
       end
-  
+
       -- get all the servers that are available through mason-lspconfig
       local have_mason, mlsp = pcall(require, "mason-lspconfig")
       local all_mslp_servers = {}
       if have_mason then
         all_mslp_servers = vim.tbl_keys(require("mason-lspconfig.mappings.server").lspconfig_to_package)
       end
-  
+
       local ensure_installed = {} ---@type string[]
       for server, server_opts in pairs(servers) do
         if server_opts then
@@ -184,11 +217,11 @@ return {
           end
         end
       end
-  
+
       if have_mason then
         mlsp.setup({ ensure_installed = ensure_installed, handlers = { setup } })
       end
-  
+
       if Util.lsp.get_config("denols") and Util.lsp.get_config("tsserver") then
         local is_deno = require("lspconfig.util").root_pattern("deno.json", "deno.jsonc")
         Util.lsp.disable("tsserver", is_deno)
@@ -283,52 +316,51 @@ return {
   --   end,
   --   config = M.setup,
   -- },
-      -- {
-      --   "nvimtools/none-ls.nvim",
-      --   event = "LazyFile",
-      --   dependencies = { "mason.nvim" },
-      --   init = function()
-      --     Util.on_very_lazy(function()
-      --       -- register the formatter with LazyVim
-      --       require("lazyvim.util").format.register({
-      --         name = "none-ls.nvim",
-      --         priority = 200, -- set higher than conform, the builtin formatter
-      --         primary = true,
-      --         format = function(buf)
-      --           return Util.lsp.format({
-      --             bufnr = buf,
-      --             filter = function(client)
-      --               return client.name == "null-ls"
-      --             end,
-      --           })
-      --         end,
-      --         sources = function(buf)
-      --           local ret = require("null-ls.sources").get_available(vim.bo[buf].filetype, "NULL_LS_FORMATTING") or {}
-      --           return vim.tbl_map(function(source)
-      --             return source.name
-      --           end, ret)
-      --         end,
-      --       })
-      --     end)
-      --   end,
-      --   opts = function(_, opts)
-      --     local nls = require("null-ls")
-      --     opts.root_dir = opts.root_dir
-      --       or require("null-ls.utils").root_pattern(".null-ls-root", ".neoconf.json", "Makefile", ".git")
-      --     opts.sources = vim.list_extend(opts.sources or {}, {
-      --       nls.builtins.formatting.fish_indent,
-      --       nls.builtins.diagnostics.fish,
-      --       nls.builtins.formatting.stylua,
-      --       nls.builtins.formatting.shfmt,
-      --     })
-      --   end,
-      -- },
-      {
-        'sbdchd/neoformat',
-        config = function ()
-          -- Change '<C-g>' here to any keycode you like.
-          vim.keymap.set('n', '<leader>df',':Neoformat<CR>', {noremap=true, silent=true})
-        end
-      }
-    
+  -- {
+  --   "nvimtools/none-ls.nvim",
+  --   event = "LazyFile",
+  --   dependencies = { "mason.nvim" },
+  --   init = function()
+  --     Util.on_very_lazy(function()
+  --       -- register the formatter with LazyVim
+  --       require("lazyvim.util").format.register({
+  --         name = "none-ls.nvim",
+  --         priority = 200, -- set higher than conform, the builtin formatter
+  --         primary = true,
+  --         format = function(buf)
+  --           return Util.lsp.format({
+  --             bufnr = buf,
+  --             filter = function(client)
+  --               return client.name == "null-ls"
+  --             end,
+  --           })
+  --         end,
+  --         sources = function(buf)
+  --           local ret = require("null-ls.sources").get_available(vim.bo[buf].filetype, "NULL_LS_FORMATTING") or {}
+  --           return vim.tbl_map(function(source)
+  --             return source.name
+  --           end, ret)
+  --         end,
+  --       })
+  --     end)
+  --   end,
+  --   opts = function(_, opts)
+  --     local nls = require("null-ls")
+  --     opts.root_dir = opts.root_dir
+  --       or require("null-ls.utils").root_pattern(".null-ls-root", ".neoconf.json", "Makefile", ".git")
+  --     opts.sources = vim.list_extend(opts.sources or {}, {
+  --       nls.builtins.formatting.fish_indent,
+  --       nls.builtins.diagnostics.fish,
+  --       nls.builtins.formatting.stylua,
+  --       nls.builtins.formatting.shfmt,
+  --     })
+  --   end,
+  -- },
+  {
+    "sbdchd/neoformat",
+    config = function()
+      -- Change '<C-g>' here to any keycode you like.
+      vim.keymap.set("n", "<leader>df", ":Neoformat<CR>", { noremap = true, silent = true })
+    end,
+  },
 }

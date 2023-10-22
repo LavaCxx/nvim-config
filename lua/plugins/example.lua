@@ -96,7 +96,7 @@ return {
       servers = {
         -- pyright will be automatically installed with mason and loaded with lspconfig
         pyright = {},
-        eslint = {}
+        eslint = {},
       },
       setup = {
         eslint = function()
@@ -155,11 +155,11 @@ return {
   {
     "nvim-treesitter/nvim-treesitter",
     opts = {
-      dependencies={
-        "windwp/nvim-ts-autotag"
+      dependencies = {
+        "windwp/nvim-ts-autotag",
       },
-      autotag={
-        enable=true
+      autotag = {
+        enable = true,
       },
       ensure_installed = {
         "vue",
@@ -194,7 +194,7 @@ return {
         "tsx",
         "typescript",
         "vue",
-        "jsx"
+        "jsx",
       })
     end,
   },
