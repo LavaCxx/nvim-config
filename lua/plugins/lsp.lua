@@ -356,11 +356,11 @@ return {
   --     })
   --   end,
   -- },
-  {
-    "sbdchd/neoformat",
-    config = function()
-      -- Change '<C-g>' here to any keycode you like.
-      vim.keymap.set("n", "<leader>df", ":Neoformat<CR>", { noremap = true, silent = true })
-    end,
-  },
+  -- {
+  --   "sbdchd/neoformat",
+  --   config = function()
+  --     -- Change '<C-g>' here to any keycode you like.
+  --     vim.keymap.set("n", "<leader>df", ":Neoformat<CR>", { noremap = true, silent = true })
+  --   end,
+  -- },
 }
