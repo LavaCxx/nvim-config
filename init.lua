@@ -6,7 +6,12 @@ if vim.g.neovide then
     vim.g.neovide_transparency = 0.92
     vim.g.transparency = 0.92
 
+    vim.o.guifont = "SauceCodePro Nerd Font Mono:h16"
+    vim.g.neovide_cursor_vfx_mode = "pixiedust"
+
     vim.g.neovide_window_blurred = true
     vim.g.neovide_floating_blur_amount_x = 1.75
     vim.g.neovide_floating_blur_amount_y = 1.75
+
+    
 end 
