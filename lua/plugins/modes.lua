@@ -7,7 +7,7 @@ return {
                 colors = {
                     copy = "#689D6A",
                     delete = "#D65D0E",
-                    insert = "#3C3835",
+                    insert = "#458588",
                     visual = "#D79921",
                 },
             

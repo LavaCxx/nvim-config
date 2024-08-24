@@ -116,10 +116,11 @@ return {
       end
 
       -- setup autoformat
-      Util.format.register(Util.lsp.formatter())
+      -- Util.format.register(Util.lsp.formatter())
 
       -- deprectaed options
       if opts.autoformat ~= nil then
+        -- vim.g.autoformat = opts.autoformat
         vim.g.autoformat = opts.autoformat
         Util.deprecate("nvim-lspconfig.opts.autoformat", "vim.g.autoformat")
       end
@@ -197,6 +198,7 @@ return {
         end
         require("lspconfig")[server].setup(server_opts)
       end
+      require("lspconfig").astro.setup({})
 
       -- get all the servers that are available through mason-lspconfig
       local have_mason, mlsp = pcall(require, "mason-lspconfig")
